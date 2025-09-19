@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt
 import matplotlib
 import io
 import urllib, base64
+from dotenv import load_dotenv
+import os
+import numpy as np
+from openai import OpenAI
 
 from.models import Movie
 
@@ -88,4 +92,43 @@ def statistics_view(request):
     return render(request, 'statistics.html', {
         'graphic_year': graphic_year,
         'graphic_genre': graphic_genre
+    })
+
+# Cargar API key
+load_dotenv('openAI.env')
+client = OpenAI(api_key=os.environ.get('openai_apikey'))
+
+def cosine_similarity(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+def recommendation(request):
+    recommended_movie = None
+    user_prompt = ""
+
+    if request.method == "POST":
+        user_prompt = request.POST.get("prompt", "")
+
+        if user_prompt.strip():
+            # Generar embedding del prompt
+            response = client.embeddings.create(
+                input=[user_prompt],
+                model="text-embedding-3-small"
+            )
+            prompt_emb = np.array(response.data[0].embedding, dtype=np.float32)
+
+            # Buscar la película más similar
+            max_similarity = -1
+            for movie in Movie.objects.all():
+                if not movie.emb:
+                    continue
+                movie_emb = np.frombuffer(movie.emb, dtype=np.float32)
+                similarity = cosine_similarity(prompt_emb, movie_emb)
+
+                if similarity > max_similarity:
+                    max_similarity = similarity
+                    recommended_movie = movie
+
+    return render(request, "recomendation.html", {
+        "prompt": user_prompt,
+        "movie": recommended_movie
     })

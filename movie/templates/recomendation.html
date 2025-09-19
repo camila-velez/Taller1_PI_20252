@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container my-4">
+    <h1 class="mb-4">Sistema de recomendación de películas 🎬</h1>
+
+    <!-- Formulario -->
+    <form method="POST" class="mb-5">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="prompt" class="form-label">Describe la película que buscas</label>
+            <input type="text" name="prompt" class="form-control" placeholder="Ej: película de acción en el espacio" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Buscar recomendación</button>
+    </form>
+
+    <!-- Resultado -->
+    {% if movie %}
+        <h2>Película recomendada:</h2>
+        <div class="card mt-3 shadow-sm" style="width: 20rem;">
+            <img src="{{movie.image.url}}" class="card-img-top" alt="{{movie.title}}">
+            <div class="card-body">
+                <h5 class="card-title">{{movie.title}}</h5>
+                <p class="card-text">{{movie.description}}</p>
+                <p class="card-text"><small class="text-muted">{{movie.genre}} - {{movie.year}}</small></p>
+            </div>
+        </div>
+    {% elif prompt %}
+        <p class="text-danger">⚠️ No se encontró ninguna película similar.</p>
+    {% endif %}
+</div>
+
+{% endblock content %}
